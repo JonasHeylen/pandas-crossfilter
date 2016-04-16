@@ -43,16 +43,23 @@ def crossfilter_dataframe(df, width=450, height=250):
 
     _.each(_.keys(crossfilterData[0]), function(prop) {
         var propId = prop.replace(".", "_");
-        element.append('<div style="float: left;" id="dc-{uuid}-chart-' + propId + '"><strong>' + prop + '</strong>' +
+        var chartId = "dc-{uuid}-chart-" + propId;
+        element.append('<div style="float: left;" id="' + chartId + '"><strong>' + prop + '</strong>' +
                        '<div style="clear: both;"></div></div>');
         var dim = cf.dimension(pluck(prop));
         var group = dim.group().reduceCount();
-        var min = dim.bottom(1)[0][prop];
-        var max = dim.top(1)[0][prop];
-        var chart = dc.barChart("#dc-{uuid}-chart-" + propId);
-        chart.dimension(dim).group(group)
-            .x(d3.scale.linear().domain([min, max]))
-            .width({width}).height({height});
+
+        if (typeof crossfilterData[0][prop] === "string") {
+            var chart = dc.rowChart("#" + chartId);
+            chart.dimension(dim).group(group).width({width}).height({height});
+        } else {
+            var min = dim.bottom(1)[0][prop];
+            var max = dim.top(1)[0][prop];
+            var chart = dc.barChart("#" + chartId);
+            chart.dimension(dim).group(group)
+                .x(d3.scale.linear().domain([min, max]))
+                .width({width}).height({height});
+        }
     });
 
     dc.renderAll();
