@@ -1,3 +1,4 @@
+import uuid
 from IPython.display import HTML, Javascript, display
 
 
@@ -23,6 +24,7 @@ def dataframe_as_js(df, name='crossfilterData'):
 
 
 def crossfilter_dataframe(df):
+    guid = uuid.uuid4()
     return Javascript("""require(['d3', 'crossfilter', 'dc', 'underscore'], function(d3, crossfilter, dc, _) {
     var pluck = function(prop) {
         return function(d) { return d[prop]; };
@@ -33,21 +35,21 @@ def crossfilter_dataframe(df):
     var cf = crossfilter(crossfilterData);
     var all = cf.groupAll();
 
-    element.append('<div id="dc-count"><strong class="filter-count">?</strong> selected ' +
+    element.append('<div id="dc-{uuid}-count"><strong class="filter-count">?</strong> selected ' +
                    'out of <strong class="total-count">?</strong> records</div>' +
                    '<div style="clear: both;"></div>');
-    var count = dc.dataCount("#dc-count");
+    var count = dc.dataCount("#dc-{uuid}-count");
     count.dimension(cf).group(all);
 
     _.each(_.keys(crossfilterData[0]), function(prop) {
         var propId = prop.replace(".", "_");
-        element.append('<div style="float: left;" id="dc-chart-' + propId + '"><strong>' + prop + '</strong>' +
+        element.append('<div style="float: left;" id="dc-{uuid}-chart-' + propId + '"><strong>' + prop + '</strong>' +
                        '<div style="clear: both;"></div></div>');
         var dim = cf.dimension(pluck(prop));
         var group = dim.group().reduceCount();
         var min = dim.bottom(1)[0][prop];
         var max = dim.top(1)[0][prop];
-        var chart = dc.barChart("#dc-chart-" + propId);
+        var chart = dc.barChart("#dc-{uuid}-chart-" + propId);
         chart.dimension(dim).group(group)
             .x(d3.scale.linear().domain([min, max]))
             .width(450).height(250);
@@ -55,7 +57,7 @@ def crossfilter_dataframe(df):
 
     dc.renderAll();
     dc.redrawAll();
-});""".replace('{json}', df.to_json(orient='records')))
+});""".replace('{json}', df.to_json(orient='records')).replace('{uuid}', str(guid)))
 
 
 # TODO:
@@ -64,6 +66,4 @@ def crossfilter_dataframe(df):
 # - add data table
 # - make graphs configurable
 # - handle text columns
-# - support multiple crossfilters in the same notebook:
-#     - datacount selects div by id
-#     - same column name in multiple dfs not supported
+# - "reset filters" link
