@@ -23,7 +23,7 @@ def dataframe_as_js(df, name='crossfilterData'):
     return Javascript("window.{name} = {json};".format(name=name, json=df.to_json(orient='records')))
 
 
-def crossfilter_dataframe(df):
+def crossfilter_dataframe(df, width=450, height=250):
     guid = uuid.uuid4()
     return Javascript("""require(['d3', 'crossfilter', 'dc', 'underscore'], function(d3, crossfilter, dc, _) {
     var pluck = function(prop) {
@@ -52,12 +52,13 @@ def crossfilter_dataframe(df):
         var chart = dc.barChart("#dc-{uuid}-chart-" + propId);
         chart.dimension(dim).group(group)
             .x(d3.scale.linear().domain([min, max]))
-            .width(450).height(250);
+            .width({width}).height({height});
     });
 
     dc.renderAll();
     dc.redrawAll();
-});""".replace('{json}', df.to_json(orient='records')).replace('{uuid}', str(guid)))
+});""".replace('{json}', df.to_json(orient='records')).replace('{uuid}', str(guid)) \
+                      .replace('{width}', str(width)).replace('{height}', str(height)))
 
 
 # TODO:
