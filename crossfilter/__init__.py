@@ -26,18 +26,18 @@ class Crossfilter:
     def __init__(self, df, graphs=None, width=450, height=250):
         self.df = df
         self.graphs = graphs
-        if not self.graphs:
-            self.graphs = [self.default_graph(col_name) for col_name in self.df.columns]
         self.width = width
         self.height = height
+        if not self.graphs:
+            self.graphs = [self.default_graph(col_name) for col_name in self.df.columns]
 
     def default_graph(self, col_name):
         #import pdb; pdb.set_trace()
         cat_columns = self.df.select_dtypes(include=['category']).columns
         if col_name in cat_columns:
-            return RowChart(col_name)
+            return RowChart(col_name, width=self.width, height=self.height)
         else:
-            return BarChart(col_name)
+            return BarChart(col_name, width=self.width, height=self.height)
 
 
     def _repr_javascript_(self):
@@ -61,8 +61,7 @@ class Crossfilter:
         dc.renderAll();
         dc.redrawAll();
     });"""
-        return js.replace('{json}', df.to_json(orient='records')).replace('{uuid}', str(guid)) \
-                          .replace('{width}', str(self.width)).replace('{height}', str(self.height))
+        return js.replace('{json}', df.to_json(orient='records')).replace('{uuid}', str(guid))
 
 
 class Chart:
@@ -85,9 +84,11 @@ class Summary(Chart):
 
 
 class ProperyChart(Chart):
-    def __init__(self, property, crossfilter_name='cf'):
+    def __init__(self, property, crossfilter_name='cf', width=450, height=250):
         super().__init__(crossfilter_name)
         self.property = property
+        self.width = width
+        self.height = height
 
 
 class BarChart(ProperyChart):
@@ -108,7 +109,8 @@ class BarChart(ProperyChart):
             .xUnits(dc.units.integers)
             .elasticY(true)
             .width({width}).height({height});
-        """.replace('{cf}', self.crossfilter_name).replace("{prop}", self.property)
+        """.replace('{cf}', self.crossfilter_name).replace("{prop}", self.property)\
+            .replace('{width}', str(self.width)).replace('{height}', str(self.height))
 
 
 class RowChart(ProperyChart):
@@ -125,7 +127,8 @@ class RowChart(ProperyChart):
         var max = dim.top(1)[0][prop] + 1;
         var chart = dc.rowChart("#" + chartId);
         chart.dimension(dim).group(group).width({width}).height({height});
-        """.replace('{cf}', self.crossfilter_name).replace("{prop}", self.property)
+        """.replace('{cf}', self.crossfilter_name).replace("{prop}", self.property)\
+            .replace('{width}', str(self.width)).replace('{height}', str(self.height))
 
 
 # TODO:
